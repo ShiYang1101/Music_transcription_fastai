@@ -3,8 +3,56 @@ import glob
 import os 
 import math
 import numpy as np
+import matplotlib.pyplot as plt
+import random
 
-def generate_spec(path, sr = None, full_path = False, **kwargs):
+
+def add_noise(spec, plot = False, seed = 42):
+    '''
+    >>> test = np.ndarray((3, 5))
+    >>> add_noise(test).shape
+    (3, 5)
+    '''
+    np.random.seed(seed)
+    output = spec + np.random.normal(0, 0.025, size = spec.shape)
+    if plot == True:
+        plt.plot(spec)
+        plt.plot(range(len(output)), output)
+    return output
+
+def mask_spec(arr, inplace = False):
+    '''
+    Function masking the spectrogram, randomly choose 2 to 3 startin point in spectrogram
+    numpy array, and setting random duration after it to magnitude 0. Applies both 
+    to the time and frequnecy dimension.
+    
+    Input: numpy.ndarray
+    Output: numpy.ndarray
+
+    
+    '''
+    loop = random.randint(1, 2)
+    tmp = arr.copy()
+    for i in range(loop):
+        start = random.randint(0, arr.shape[1])
+        duration = random.randint(25, 60)
+        if inplace == True:
+            arr[:, start:start + duration] = 0
+        else:
+            tmp[:, start:start+duration] = 0
+    freq_loop = random.randint(1, 3)
+    for freq in range(freq_loop):
+        start = random.randint(0, arr.shape[0])
+        duration = random.randint(25, 60)
+        if inplace == True:
+            arr[start:start + duration, :] = 0
+        else:
+            tmp[start:start + duration, :] = 0
+
+    return None if inplace == True else tmp
+
+def generate_spec(path, sr = None, full_path = False, noise = True, 
+                    **kwargs):
     '''
     Generate spectrogram's numpy nd.array base on directory.
     The first dimension contains the frequency bins, whereas the second
@@ -23,6 +71,8 @@ def generate_spec(path, sr = None, full_path = False, **kwargs):
     else:
         true_path = path
     file, sr = librosa.load(true_path, sr=sr)
+    if noise == True:
+        file = add_noise(file)
     y = librosa.stft(file, **kwargs)
     return np.abs(y)
 
@@ -56,7 +106,3 @@ def truncate_spec(sig, max_len):
         return sig
 
 
-def add_noise(spec):
-    std = spec.std()
-    return spec + np.random.normal(0, std, size = spec.shape)
-        
