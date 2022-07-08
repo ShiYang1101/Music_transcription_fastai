@@ -7,9 +7,6 @@ import matplotlib.pyplot as plt
 import random
 
 
-Class spec(Object):
-
-
 def add_noise(_spec, plot = False, seed = 42):
     '''
     >>> test = np.ndarray((3, 5))
