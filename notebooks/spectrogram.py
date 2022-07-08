@@ -7,16 +7,19 @@ import matplotlib.pyplot as plt
 import random
 
 
-def add_noise(spec, plot = False, seed = 42):
+Class spec(Object):
+
+
+def add_noise(_spec, plot = False, seed = 42):
     '''
     >>> test = np.ndarray((3, 5))
     >>> add_noise(test).shape
     (3, 5)
     '''
     np.random.seed(seed)
-    output = spec + np.random.normal(0, 0.025, size = spec.shape)
+    output = _spec + np.random.normal(0, max(_spec) * 0.2, size = _spec.shape)
     if plot == True:
-        plt.plot(spec)
+        plt.plot(_spec)
         plt.plot(range(len(output)), output)
     return output
 
@@ -31,6 +34,8 @@ def mask_spec(arr, inplace = False):
 
     
     '''
+    if not isinstance(arr, np.ndarray):
+        raise TypeError("The input type should be spectrogram represented in numpy array!")
     loop = random.randint(1, 2)
     tmp = arr.copy()
     for i in range(loop):
@@ -105,4 +110,10 @@ def truncate_spec(sig, max_len):
     else:
         return sig
 
-
+def path_to_preprocessing(path, noise_prob = 0.3, mask_prob = 0.3):
+    _spec = generate_spec(path)
+    if random.random() < noise_prob:
+        _spec = add_noise(_spec)
+    if random.random() < mask_prob:
+        _spec = mask_spec(_spec)
+    return _spec
