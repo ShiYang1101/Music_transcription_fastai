@@ -12,25 +12,61 @@ class spectrogram(object):
 
     sr = 44100
 
-    def __init__(self, input, hop_length = 4096, win_length = 1024, n_fft = 1024):
+    def __init__(self, input, hop_length = 2048, n_fft = 2048, 
+                preprocess = True, trunc_length = 500):
+        '''
+        Initialized spcectrogram instance, utilized Librosa modules for generating spectrogram
+        in numpy's ndarray format. One of the path to audio files or ndarray of 2 dimensions 
+        should be provided. Defaulted to use native sampling rate of the audio file.
+        
+        Input: str (Path to audio file)/ np.ndarray (2 dimensions)
+
+        Optional arguments:
+        hop_length: Number of sample to skip for generating short-time Fourier Transformation.
+        win_length: Window length to calculate short-time Fourier Transformation, in the units
+                    of sample.
+        n_fft: Magnitude of frequency bins after Fourier transform. The number of frequency bins
+               in the output will be n_fft//2 + 1.
+        
+        '''
         if isinstance(input, str):
-            self.spec = self.generate_spec(input, hop_length = hop_length, 
-                                        win_length = win_length, n_fft = n_fft)
+            try:
+                self.signal, self.sr = librosa.load(input, sr = None)
+            except:
+                dirpath = os.path.dirname(__file__)
+                rel_path = glob.glob(os.path.join(dirpath, '..', 'data/**[!MACOSC]/*OrchideaSOL2020/'), 
+                                recursive=True)[0]
+                self.signal, _ = librosa.load(rel_path + input, sr = None)
+
+            self.hop = hop_length
+            self.n_fft = n_fft
+            if preprocess == True:
+                self.add_noise() 
+            self.generate_spec(input, hop_length = hop_length, 
+                                        n_fft = n_fft)
+            if preprocess == True:
+                self.mask_spec()
+                self.shift_spec()
         elif isinstance(input, np.ndarray):
             self.spec = input
+        self.truncate_spec(trunc_length)
+        assert isinstance(self.spec, np.ndarray), 'The spectrogram generate is not in the form of np.array!'
+        assert self.spec.ndim == 2, f"The spectrogram is not a 2 dimensional np array! It is a {self.spec.shape} array."
 
     def add_noise(self, plot = False, seed = 42):
         '''
+        Only to be used within the generate_spec method under spectrogram class.
+        Method for adding noise to signals. By default, the noise added
+        to the signal will default to be the normal distribution with standard deviation
+        of 20 percent of maximum magnitude.
+
+        Input: Instance of spectrogram class
         >>> test = np.ndarray((3, 5))
         >>> add_noise(test).shape
         (3, 5)
         '''
         np.random.seed(seed)
-        output = self.spec + np.random.normal(0, max(self.spec) * 0.2, size = self.spec.shape)
-        if plot == True:
-            plt.plot(self.spec)
-            plt.plot(range(len(output)), output)
-        return output
+        self.signal = self.signal + np.random.normal(0, max(self.signal) * 0.2, size = self.signal.shape)
 
     def mask_spec(self, inplace = False):
         '''
@@ -48,22 +84,14 @@ class spectrogram(object):
         for i in range(loop):
             start = random.randint(0, self.spec.shape[1])
             duration = random.randint(25, 60)
-            if inplace == True:
-                self.spec[:, start:start + duration] = 0
-            else:
-                tmp[:, start:start+duration] = 0
-        freq_loop = random.randint(1, 3)
+            self.spec[:, start:start + duration] = 0
+        freq_loop = random.randint(1, 2)
         for freq in range(freq_loop):
             start = random.randint(0, self.spec.shape[0])
-            duration = random.randint(25, 60)
-            if inplace == True:
-                self.spec[start:start + duration, :] = 0
-            else:
-                tmp[start:start + duration, :] = 0
+            duration = random.randint(10, 30)
+            self.spec[start:start + duration, :] = 0
 
-        return None if inplace == True else tmp
-
-    def generate_spec(self, path, sr = None, full_path = False, noise = True, 
+    def generate_spec(self, sr = None, full_path = False, noise = True, 
                         **kwargs):
         '''
         Generate spectrogram's numpy nd.array base on directory.
@@ -77,14 +105,13 @@ class spectrogram(object):
         Input: String, path to audio file.
         Output: 2 dimensions nd.array.
         '''
-        rel_path = glob.glob('../data/**[!MACOSC]/*OrchideaSOL2020/', recursive=True)[0]
-        if full_path == False:
-            true_path = rel_path + path
-        else:
-            true_path = path
-        file, sr = librosa.load(true_path, sr=sr)
-        y = librosa.stft(file, **kwargs)
-        return np.abs(y)
+        # print(self.hop)
+        # file = librosa.stft(self.signal, hop_length=self.hop, n_fft=self.n_fft)
+        # print(file.shape)
+        self.spec = librosa.feature.melspectrogram(self.signal, n_mels = 256, hop_length=self.hop, n_fft=self.n_fft)
+        print('mel:', self.spec.shape)
+        if self.spec.ndim == 3:
+            self.spec = np.reshape(self.spec, self.spec.shape[:2])
 
     def truncate_spec(self, max_len):
         '''
@@ -109,23 +136,40 @@ class spectrogram(object):
             to_pad = max_len - self.spec.shape[1]
             left_pad = math.floor(to_pad/2)
             right_pad = to_pad - left_pad 
-            return np.pad(self.spec, ((0, 0), (left_pad, right_pad)))
+            self.spec = np.pad(self.spec, ((0, 0), (left_pad, right_pad)))
         elif self.spec.shape[1] > max_len:
-            return self.spec[:,:max_len]
-        else:
-            return self.spec
+            self.spec = self.spec[:,:max_len]
+
 
     def preprocess(self, noise_prob = 0.3, mask_prob = 0.3):
+        '''
+        Method for preprocessing of spectrogram, produce masking, shifting and scaling magnitude 
+        for signals.'''
         if random.random() < noise_prob:
             self.add_noise()
         if random.random() < mask_prob:
             self.mask_spec()
 
     def plot_spec(self):
-        librosa.display.specshow(librosa.amplitude_to_db(self.spec), x_axis='s', 
-                                y_axis= 'log')
+        if self.spec.ndim > 2:
+            librosa.display.specshow(librosa.amplitude_to_db(np.reshape(self.spec, self.spec.shape[:2])), 
+                                x_axis='s', 
+                                y_axis= 'mel', hop_length=self.hop, n_fft=self.n_fft)
+        else:
+            librosa.display.specshow(librosa.amplitude_to_db(self.spec), x_axis='s', 
+                                    y_axis= 'mel', hop_length=self.hop, n_fft=self.n_fft)
+    
 
-test = spectrogram('PluckedStrings/Harp/pizzicato_bartok/Hp-pizz_bartok-G3-ff-N-N.wav')
-print(test.spec.shape)
-test.preprocess()
-test.plot_spec()
+    def shift_spec(self):
+        tmp = self.spec.copy()
+        roll_window = int(np.random.uniform(int(self.sr*0.5/self.hop), 
+                                        int(self.sr/self.hop)))
+        tmp = np.roll(tmp, roll_window, axis = 1)
+        self.spec = tmp
+
+if __name__ == '__main__':
+    test = spectrogram('PluckedStrings/Harp/pizzicato_bartok/Hp-pizz_bartok-G3-ff-N-N.wav')
+    print(test.spec.shape)
+    test.preprocess()
+    print(test.spec.shape, 'HIT')
+    test.plot_spec()
