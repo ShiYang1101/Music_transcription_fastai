@@ -18,7 +18,7 @@ def main():
                 overwrite_num += 1
             else:
                 convert_num += 1
-            np.save(outfile, spec)
+            np.save(outfile, spec.spec)
         except Exception as e:
             print(e)
             fail_num += 1

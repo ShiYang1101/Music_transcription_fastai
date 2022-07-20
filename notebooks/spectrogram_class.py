@@ -7,6 +7,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 import librosa.display
+import warnings
+warnings.filterwarnings("ignore")
 
 class spectrogram(object):
 
@@ -109,7 +111,6 @@ class spectrogram(object):
         # file = librosa.stft(self.signal, hop_length=self.hop, n_fft=self.n_fft)
         # print(file.shape)
         self.spec = librosa.feature.melspectrogram(self.signal, n_mels = 256, hop_length=self.hop, n_fft=self.n_fft)
-        print('mel:', self.spec.shape)
         if self.spec.ndim == 3:
             self.spec = np.reshape(self.spec, self.spec.shape[:2])
 
