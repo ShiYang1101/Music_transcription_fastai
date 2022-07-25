@@ -69,7 +69,7 @@ class spectrogram(object):
         (3, 5)
         '''
         np.random.seed(seed)
-        self.signal = self.signal + np.random.normal(0, max(self.signal) * 0.2, size = self.signal.shape)
+        self.signal = self.signal + np.random.normal(0, max(self.signal) * 0.05, size = self.signal.shape)
 
     def mask_spec(self, inplace = False):
         '''

@@ -19,8 +19,8 @@ def _get_spec(path, test_verbose = False):
     try:
         if test_verbose:
             print('HIT')
-        return np.expand_dims(np.load(os.path.splitext(path)[0] + \
-                                '.npy', allow_pickle=True), -1)
+        return np.load(os.path.splitext(path)[0] + \
+                                '.npy', allow_pickle=True)
         if test_verbose:
             print("SUCCESS")
     except:
@@ -29,7 +29,7 @@ def _get_spec(path, test_verbose = False):
         spec = spectrogram(path)
     # if preprocess = True:
     #     spec.
-    spec.spec = np.expand_dims(spec.spec, -1)
+    # spec.spec = np.expand_dims(spec.spec, -1)
     return spec.spec
 
 class spec_generator(Sequence):
