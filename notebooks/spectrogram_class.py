@@ -15,7 +15,7 @@ class spectrogram(object):
     sr = 44100
 
     def __init__(self, input, hop_length = 2048, n_fft = 2048, 
-                preprocess = True, trunc_length = 500):
+                preprocess = True, trunc_length = 500, trunc_off = False):
         '''
         Initialized spcectrogram instance, utilized Librosa modules for generating spectrogram
         in numpy's ndarray format. One of the path to audio files or ndarray of 2 dimensions 
@@ -51,7 +51,8 @@ class spectrogram(object):
                 self.shift_spec()
         elif isinstance(input, np.ndarray):
             self.spec = input
-        self.truncate_spec(trunc_length)
+        if not trunc_off:
+            self.truncate_spec(trunc_length)
         assert isinstance(self.spec, np.ndarray), 'The spectrogram generate is not in the form of np.array!'
         assert self.spec.ndim == 2, f"The spectrogram is not a 2 dimensional np array! It is a {self.spec.shape} array."
 
