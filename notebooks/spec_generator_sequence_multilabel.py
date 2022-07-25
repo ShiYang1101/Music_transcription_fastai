@@ -35,8 +35,8 @@ def _get_spec(path, test_verbose = False):
     try:
         if test_verbose:
             print('HIT')
-        return np.transpose(np.load(os.path.splitext(path)[0] + \
-                                '.npy', allow_pickle=True))
+        return np.expand_dims(np.transpose(np.load(os.path.splitext(path)[0] + \
+                                '.npy', allow_pickle=True)), -1)
         if test_verbose:
             print("SUCCESS")
     except:
@@ -46,7 +46,7 @@ def _get_spec(path, test_verbose = False):
     # if preprocess = True:
     #     spec.
     spec.spec = np.transpose(spec.spec)
-    # spec.spec = np.expand_dims(spec.spec, -1)
+    spec.spec = np.expand_dims(spec.spec, -1)
     return spec.spec
 
 class spec_generator_multi(Sequence):
