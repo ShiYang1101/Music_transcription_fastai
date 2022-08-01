@@ -12,7 +12,6 @@ warnings.filterwarnings("ignore")
 
 class spectrogram(object):
 
-    sr = 44100
 
     def __init__(self, input, hop_length = 2048, n_fft = 2048, 
                 preprocess = True, trunc_length = 500, trunc_off = False):
@@ -38,7 +37,7 @@ class spectrogram(object):
                 dirpath = os.path.dirname(__file__)
                 rel_path = glob.glob(os.path.join(dirpath, '..', 'data/**[!MACOSC]/*OrchideaSOL2020/'), 
                                 recursive=True)[0]
-                self.signal, _ = librosa.load(rel_path + input, sr = None)
+                self.signal, self.sr = librosa.load(rel_path + input, sr = None)
 
             self.hop = hop_length
             self.n_fft = n_fft
@@ -110,7 +109,6 @@ class spectrogram(object):
         '''
         # print(self.hop)
         # file = librosa.stft(self.signal, hop_length=self.hop, n_fft=self.n_fft)
-        # print(file.shape)
         self.spec = librosa.feature.melspectrogram(self.signal, n_mels = 256, hop_length=self.hop, n_fft=self.n_fft)
         if self.spec.ndim == 3:
             self.spec = np.reshape(self.spec, self.spec.shape[:2])
