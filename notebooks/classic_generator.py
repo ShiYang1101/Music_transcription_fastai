@@ -14,8 +14,6 @@ from spectrogram_class import spectrogram
 path_to_notebooks = os.path.dirname(__file__)
 path_to_data = glob.glob('../**/musicnet/', recursive=True)[0]
 _full_path_to_data = os.path.join(path_to_notebooks, path_to_data)
-print(_full_path_to_data)
-print('HIT', path_to_data)
 _train_label_path = os.path.join(path_to_notebooks, path_to_data, 'train_labels/')
 
 _df_list = []
@@ -25,8 +23,6 @@ _train_label_df = pd.concat(_df_list, ignore_index=True)
 
 _instrument_list = sorted(_train_label_df['instrument'].unique())
 _note_list = sorted(_train_label_df['note'].unique())
-print(_instrument_list)
-print(_note_list)
 
 _sr = 44100
 
@@ -44,6 +40,9 @@ def truncate_spec(arr, max_len):
         return arr
     else:
         return arr
+
+def spec_scaler(arr):
+    return (arr - arr.mean())/arr.std()
 
 def get_full_path(path, mode):
     return os.path.join(_full_path_to_data, 
@@ -70,13 +69,10 @@ class classic_generator(Sequence):
     def __init__(self, mode = 'train', batch_size = 32):
         self.x_path = os.path.join(path_to_notebooks, path_to_data, f"{mode}_data/")
         self.y_path = os.path.join(path_to_notebooks, path_to_data, f"{mode}_labels/")
-        print('x_path HIT', self.x_path)
-        self.x = pd.Series([get_full_path(x, mode = 'train') for x in 
+        self.x = pd.Series([get_full_path(x, mode = mode) for x in 
                                     os.listdir(self.x_path)])
         self.y = pd.Series([os.path.join(path_to_notebooks, path_to_data, f"{mode}_labels/", label) 
                         for label in os.listdir(self.y_path)])
-        print('x', self.x)
-        print('y', self.y)
         self.batch_size = batch_size
         self.mode = mode
         self.indices = np.arange(len(self.x))
@@ -88,17 +84,16 @@ class classic_generator(Sequence):
 
     def __getitem__(self, index):
         inds = self.indices[index * self.batch_size:(index + 1) * self.batch_size]
-        print(inds)
         batch_x = self.x[inds]
         batch_y = self.y[inds]
-        batch_x_spec = [classic_train_generator(x) for x in batch_x]
+        batch_x_spec = [spec_scaler(classic_train_generator(x)) for x in batch_x]
         batch_time = [x.shape[1] for x in batch_x_spec]
         max_batch_time = max([x.shape[1] for x in batch_x_spec])
-        batch_x_spec = [truncate_spec(x, max_batch_time) for x in batch_x_spec]
+        batch_x_spec = [truncate_spec(x, max_batch_time).T for x in batch_x_spec]
 
-        return np.array([batch_x_spec]), \
-                            {f"{ins}": np.array([truncate_spec(_instrument_label_generator(label, ins, time, 
-                                                mode= self.mode), max_batch_time) for label, time 
+        return np.array(batch_x_spec), \
+                            {f"instrument_{ins}": np.array([truncate_spec(_instrument_label_generator(label, ins, time, 
+                                                mode= self.mode), max_batch_time).T for label, time 
                                                         in zip(batch_y, batch_time)])
                                                             for ins in _instrument_list} 
 
