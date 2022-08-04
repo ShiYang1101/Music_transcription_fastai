@@ -11,6 +11,8 @@ import warnings
 warnings.filterwarnings("ignore")
 
 class spectrogram(object):
+    '''
+    Class object for spectrogram or augmentation, '''
 
 
     def __init__(self, input, hop_length = 3500, n_fft = 4096, n_mels = 64, 
