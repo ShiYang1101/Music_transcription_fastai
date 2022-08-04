@@ -89,7 +89,8 @@ class classic_generator(Sequence):
         batch_x_spec = [spec_scaler(classic_train_generator(x)) for x in batch_x]
         batch_time = [x.shape[1] for x in batch_x_spec]
         max_batch_time = max([x.shape[1] for x in batch_x_spec])
-        batch_x_spec = [truncate_spec(x, max_batch_time).T for x in batch_x_spec]
+        batch_x_spec = [np.expand_dims(truncate_spec(x, max_batch_time).T, -1) 
+                                                        for x in batch_x_spec]
 
         return np.array(batch_x_spec), \
                             {f"instrument_{ins}": np.array([truncate_spec(_instrument_label_generator(label, ins, time, 

@@ -13,7 +13,7 @@ warnings.filterwarnings("ignore")
 class spectrogram(object):
 
 
-    def __init__(self, input, hop_length = 2048, n_fft = 2048, 
+    def __init__(self, input, hop_length = 3500, n_fft = 4096, n_mels = 64, 
                 preprocess = True, trunc_length = 500, trunc_off = False):
         '''
         Initialized spcectrogram instance, utilized Librosa modules for generating spectrogram
@@ -31,6 +31,7 @@ class spectrogram(object):
         
         '''
         if isinstance(input, str):
+            self.n_mels = n_mels
             try:
                 self.signal, self.sr = librosa.load(input, sr = None)
             except:
@@ -49,6 +50,7 @@ class spectrogram(object):
                 self.mask_spec()
                 self.shift_spec()
         elif isinstance(input, np.ndarray):
+            self.n_mels = n_mels
             self.spec = input
         if not trunc_off:
             self.truncate_spec(trunc_length)
@@ -109,7 +111,7 @@ class spectrogram(object):
         '''
         # print(self.hop)
         # file = librosa.stft(self.signal, hop_length=self.hop, n_fft=self.n_fft)
-        self.spec = librosa.feature.melspectrogram(self.signal, n_mels = 256, hop_length=self.hop, n_fft=self.n_fft)
+        self.spec = librosa.feature.melspectrogram(self.signal, n_mels = self.n_mels, hop_length=self.hop, n_fft=self.n_fft)
         if self.spec.ndim == 3:
             self.spec = np.reshape(self.spec, self.spec.shape[:2])
 
