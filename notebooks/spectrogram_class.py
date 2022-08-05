@@ -1,18 +1,24 @@
-import string
-import librosa
 import glob
-import os 
 import math
-import numpy as np
-import matplotlib.pyplot as plt
+import os
 import random
-import librosa.display
+import string
+import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+import numpy as nps
 import warnings
+
+import librosa
+import librosa.display
+import matplotlib.pyplot as plt
+import numpy as np
+
 warnings.filterwarnings("ignore")
 
 class spectrogram(object):
     '''
-    Class object for spectrogram or augmentation, '''
+    Class object for spectrogram or augmentation, utilized librosa.
+    '''
 
 
     def __init__(self, input, hop_length = 3500, n_fft = 4096, n_mels = 64, 
@@ -30,25 +36,37 @@ class spectrogram(object):
                     of sample.
         n_fft: Magnitude of frequency bins after Fourier transform. The number of frequency bins
                in the output will be n_fft//2 + 1.
+        n_mels: int, number of frequency bins after mel spectrogram generation
+        preprocess: Boolean, whether to apply adding noise, masking and shifting 
+                    audio files generated
+        trunc_off: Boolean, whether to turn off truncateion of spectrogram
+        trun_length: int, length of spectrogram time dimension to be truncated.
         
         '''
         if isinstance(input, str):
             self.n_mels = n_mels
             try:
+                # Generating signal from path
                 self.signal, self.sr = librosa.load(input, sr = None)
             except:
+                # Getting the path to audio file
                 dirpath = os.path.dirname(__file__)
                 rel_path = glob.glob(os.path.join(dirpath, '..', 'data/**[!MACOSC]/*OrchideaSOL2020/'), 
                                 recursive=True)[0]
+
+                # Generatinf signal
                 self.signal, self.sr = librosa.load(rel_path + input, sr = None)
 
             self.hop = hop_length
             self.n_fft = n_fft
             if preprocess == True:
+                # Adding noise to the signal
                 self.add_noise() 
+            # Generate mel spectrogram from signal
             self.generate_spec(input, hop_length = hop_length, 
                                         n_fft = n_fft)
             if preprocess == True:
+                # Applyting masking and shifting to spectrogram
                 self.mask_spec()
                 self.shift_spec()
         elif isinstance(input, np.ndarray):
@@ -56,10 +74,12 @@ class spectrogram(object):
             self.spec = input
         if not trunc_off:
             self.truncate_spec(trunc_length)
+
+        # Sanity check that the output is in desired shape 
         assert isinstance(self.spec, np.ndarray), 'The spectrogram generate is not in the form of np.array!'
         assert self.spec.ndim == 2, f"The spectrogram is not a 2 dimensional np array! It is a {self.spec.shape} array."
 
-    def add_noise(self, plot = False, seed = 42):
+    def add_noise(self, plot = False):
         '''
         Only to be used within the generate_spec method under spectrogram class.
         Method for adding noise to signals. By default, the noise added
@@ -71,7 +91,6 @@ class spectrogram(object):
         >>> add_noise(test).shape
         (3, 5)
         '''
-        np.random.seed(seed)
         self.signal = self.signal + np.random.normal(0, max(self.signal) * 0.05, size = self.signal.shape)
 
     def mask_spec(self, inplace = False):
@@ -85,16 +104,21 @@ class spectrogram(object):
 
         
         '''
+        # Generating number of masking number
         loop = random.randint(1, 2)
         tmp = self.spec.copy()
+
+        # Masking the time dimension 
         for i in range(loop):
             start = random.randint(0, self.spec.shape[1])
             duration = random.randint(25, 60)
             self.spec[:, start:start + duration] = 0
         freq_loop = random.randint(1, 2)
+         
+        # Masking the frequency dimension
         for freq in range(freq_loop):
             start = random.randint(0, self.spec.shape[0])
-            duration = random.randint(10, 30)
+            duration = random.randint(2, 10)
             self.spec[start:start + duration, :] = 0
 
     def generate_spec(self, sr = None, full_path = False, noise = True, 
@@ -111,8 +135,6 @@ class spectrogram(object):
         Input: String, path to audio file.
         Output: 2 dimensions nd.array.
         '''
-        # print(self.hop)
-        # file = librosa.stft(self.signal, hop_length=self.hop, n_fft=self.n_fft)
         self.spec = librosa.feature.melspectrogram(self.signal, n_mels = self.n_mels, hop_length=self.hop, n_fft=self.n_fft)
         if self.spec.ndim == 3:
             self.spec = np.reshape(self.spec, self.spec.shape[:2])
@@ -143,6 +165,7 @@ class spectrogram(object):
             self.spec = np.pad(self.spec, ((0, 0), (left_pad, right_pad)))
         elif self.spec.shape[1] > max_len:
             self.spec = self.spec[:,:max_len]
+    
 
 
     def preprocess(self, noise_prob = 0.3, mask_prob = 0.3):
@@ -155,13 +178,26 @@ class spectrogram(object):
             self.mask_spec()
 
     def plot_spec(self):
+        '''
+        Support function for plotting the spectrogram
+        '''
         if self.spec.ndim > 2:
-            librosa.display.specshow(librosa.amplitude_to_db(np.reshape(self.spec, self.spec.shape[:2])), 
-                                x_axis='s', 
+            ax = plt.subplot()
+            im = librosa.display.specshow(librosa.amplitude_to_db(np.reshape(self.spec, self.spec.shape[:2])), 
+                                x_axis='s', sr = self.sr, 
                                 y_axis= 'mel', hop_length=self.hop, n_fft=self.n_fft)
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes("right", size="5%", pad=0.05)
+            plt.colorbar(im, cax = cax, format="%+2.f dB")
+            plt.show()
         else:
-            librosa.display.specshow(librosa.amplitude_to_db(self.spec), x_axis='s', 
+            ax = plt.subplot()
+            im = librosa.display.specshow(librosa.amplitude_to_db(self.spec), x_axis='s', sr = self.sr, 
                                     y_axis= 'mel', hop_length=self.hop, n_fft=self.n_fft)
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes("right", size="5%", pad=0.05)
+            plt.colorbar(im, cax = cax, format="%+2.f dB")
+            plt.show()
     
 
     def shift_spec(self):
