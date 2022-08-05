@@ -79,7 +79,7 @@ class spectrogram(object):
         assert isinstance(self.spec, np.ndarray), 'The spectrogram generate is not in the form of np.array!'
         assert self.spec.ndim == 2, f"The spectrogram is not a 2 dimensional np array! It is a {self.spec.shape} array."
 
-    def add_noise(self, plot = False):
+    def add_noise(self, noise_factor = 0.05, plot = False):
         '''
         Only to be used within the generate_spec method under spectrogram class.
         Method for adding noise to signals. By default, the noise added
@@ -91,7 +91,7 @@ class spectrogram(object):
         >>> add_noise(test).shape
         (3, 5)
         '''
-        self.signal = self.signal + np.random.normal(0, max(self.signal) * 0.05, size = self.signal.shape)
+        self.signal = self.signal + np.random.normal(0, max(self.signal) * noise_factor, size = self.signal.shape)
 
     def mask_spec(self, inplace = False):
         '''
@@ -177,32 +177,38 @@ class spectrogram(object):
         if random.random() < mask_prob:
             self.mask_spec()
 
-    def plot_spec(self):
+    def plot_spec(self, db_off = False, **kwargs):
         '''
         Support function for plotting the spectrogram
         '''
         if self.spec.ndim > 2:
-            ax = plt.subplot()
+            if not db_off:
+                ax = plt.subplot()
             im = librosa.display.specshow(librosa.amplitude_to_db(np.reshape(self.spec, self.spec.shape[:2])), 
                                 x_axis='s', sr = self.sr, 
-                                y_axis= 'mel', hop_length=self.hop, n_fft=self.n_fft)
-            divider = make_axes_locatable(ax)
-            cax = divider.append_axes("right", size="5%", pad=0.05)
-            plt.colorbar(im, cax = cax, format="%+2.f dB")
+                                y_axis= 'mel', hop_length=self.hop, n_fft=self.n_fft, 
+                                **kwargs)
+            if not db_off:
+                divider = make_axes_locatable(ax)
+                cax = divider.append_axes("right", size="5%", pad=0.05)
+                plt.colorbar(im, cax = cax, format="%+2.f dB")
             plt.show()
         else:
-            ax = plt.subplot()
+            if not db_off:
+                ax = plt.subplot()
             im = librosa.display.specshow(librosa.amplitude_to_db(self.spec), x_axis='s', sr = self.sr, 
-                                    y_axis= 'mel', hop_length=self.hop, n_fft=self.n_fft)
-            divider = make_axes_locatable(ax)
-            cax = divider.append_axes("right", size="5%", pad=0.05)
-            plt.colorbar(im, cax = cax, format="%+2.f dB")
+                                    y_axis= 'mel', hop_length=self.hop, n_fft=self.n_fft, 
+                                    **kwargs)
+            if not db_off:
+                divider = make_axes_locatable(ax)
+                cax = divider.append_axes("right", size="5%", pad=0.05)
+                plt.colorbar(im, cax = cax, format="%+2.f dB")
             plt.show()
     
 
-    def shift_spec(self):
+    def shift_spec(self, max_sec = 0.5):
         tmp = self.spec.copy()
-        roll_window = int(np.random.uniform(int(self.sr*0.5/self.hop), 
+        roll_window = int(np.random.uniform(int(self.sr* max_sec/self.hop), 
                                         int(self.sr/self.hop)))
         tmp = np.roll(tmp, roll_window, axis = 1)
         self.spec = tmp
