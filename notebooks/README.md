@@ -1,5 +1,5 @@
 Data location: AWS S3 bucket
-s3://shiyanglee-bstn-bucket
+[s3://shiyanglee-bstn-bucket](https://s3.console.aws.amazon.com/s3/buckets/shiyanglee-bstn-bucket?region=eu-west-2&tab=objects)
 
 >> Note that the data folder should be located in the parent folder of current **notebooks** folder for the data generator to works!
 
