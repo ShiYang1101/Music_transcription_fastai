@@ -22,7 +22,7 @@ class spectrogram(object):
 
 
     def __init__(self, input, hop_length = 3500, n_fft = 4096, n_mels = 64, 
-                preprocess = True, trunc_length = 500, trunc_off = False):
+                preprocess = True, trunc_length = 500, trunc_off = False, shift_off = False):
         '''
         Initialized spcectrogram instance, utilized Librosa modules for generating spectrogram
         in numpy's ndarray format. One of the path to audio files or ndarray of 2 dimensions 
@@ -68,7 +68,8 @@ class spectrogram(object):
             if preprocess == True:
                 # Applyting masking and shifting to spectrogram
                 self.mask_spec()
-                self.shift_spec()
+                if not shift_off:
+                    self.shift_spec()
         elif isinstance(input, np.ndarray):
             self.n_mels = n_mels
             self.spec = input
