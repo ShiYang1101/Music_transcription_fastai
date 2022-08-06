@@ -3,6 +3,10 @@ Data location: AWS S3 bucket
 
 >> Note that the data folder should be located in the parent folder of current **notebooks** folder for the data generator to works!
 
+Environment file:
+music_env.txt
+Note that conda export wasn't able to detect tensorflow gpu installed from pip. It was manually added and might cause issue when building environment from this txt file.
+
 Notebooks order:
 1. EDA
 1. music_transcription_class
