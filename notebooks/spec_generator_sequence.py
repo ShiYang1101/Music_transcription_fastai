@@ -14,8 +14,12 @@ meta_df = pd.read_csv('../data/OrchideaSOL_metadata.csv')
 _onehot = OneHotEncoder(sparse=False)
 _onehot.fit(meta_df[['Instrument (in full)']])
 
-def _get_spec(path, test_verbose = False):
+def _get_spec(path, test_verbose = False, live_generation = False, 
+                preprocess = True):
     path = os.path.join(dir_path, _path_to_npy, path)
+    if live_generation:
+        spec = spectrogram(path, n_mels = 512, preprocess= preprocess)
+        return spec.spec
     try:
         if test_verbose:
             print('HIT')
@@ -26,7 +30,7 @@ def _get_spec(path, test_verbose = False):
     except:
         if test_verbose:
             print("FAILED")
-        spec = spectrogram(path)
+        spec = spectrogram(path, n_mels = 512, preprocess= preprocess)
     # if preprocess = True:
     #     spec.
     # spec.spec = np.expand_dims(spec.spec, -1)
@@ -34,11 +38,15 @@ def _get_spec(path, test_verbose = False):
 
 class spec_generator(Sequence):
 
-    def __init__(self, df, batch_size):
+    def __init__(self, df, batch_size, add_channel = False, live_generation = False, 
+                    preprocess = True):
         self.x = df['Path'].array
         self.y = _onehot.transform(df[['Instrument (in full)']])
         self.batch_size = batch_size
         self.indices = np.arange(self.x.shape[0])
+        self.add_channel = add_channel
+        self.live_generation = live_generation
+        self.preprocess = preprocess
         np.random.shuffle(self.indices)
 
 
@@ -50,7 +58,11 @@ class spec_generator(Sequence):
         batch_x = self.x[inds]
         batch_y = self.y[inds]
 
-        return np.array([_get_spec(x) for x in batch_x]), np.array(batch_y)
+        return np.array([np.expand_dims(_get_spec(x, live_generation=self.live_generation, 
+                            preprocess = self.preprocess), -1) 
+                            if self.add_channel
+                            else _get_spec(x, live_generation=self.live_generation) 
+                            for x in batch_x]), np.array(batch_y)
 
     def on_epoch_end(self):
         self.indices = np.random.shuffle(self.indices)
