@@ -63,7 +63,7 @@ def classic_train_generator(path, **kwargs):
     Optional:
     **kwargs: Parameters to be passed in the spectrogram class initialization.
     '''
-    spec = spectrogram(path, hop_length = 4000, trunc_off = True, **kwargs)
+    spec = spectrogram(path, n_mels = 128, hop_length = 4000, trunc_off = True, **kwargs)
     return spec.spec
 
 def truncate_spec(arr, max_len):
