@@ -174,7 +174,8 @@ class classic_generator(Sequence):
     for training and evaluating purpose of MusicNet dataset. 
     '''
     
-    def __init__(self, mode = 'train', batch_size = 32, trunc_length = 200, expand_dim = True):
+    def __init__(self, mode = 'train', batch_size = 32, trunc_length = 200, expand_dim = True, 
+                    preprocess = True):
         '''
         Initialization for classic_generator class. The instance of this class
         act as a dataset generator for tensorflow keras models. 
@@ -183,6 +184,7 @@ class classic_generator(Sequence):
         mode: str, 'train' or 'test', used to determine the path to audio and label files
         batch_size: int, defaulted to 32, number of sample to generate in a batch
         '''
+        self.preprocess = preprocess
         self.expand_dim = expand_dim
         self.trunc_length = trunc_length
         # Getting the absolute path to the audio files
@@ -191,12 +193,12 @@ class classic_generator(Sequence):
         self.y_path = os.path.join(path_to_notebooks, path_to_data, f"{mode}_labels/")
 
         # pd Series for the available audio files
-        self.x = pd.Series([get_full_path(x, mode = mode) for x in 
-                                    os.listdir(self.x_path)])
+        self.x = pd.Series(sorted([get_full_path(x, mode = mode) for x in 
+                                    os.listdir(self.x_path)]))
 
         # pd.Series for the available label files
-        self.y = pd.Series([os.path.join(path_to_notebooks, path_to_data, f"{mode}_labels/", label) 
-                        for label in os.listdir(self.y_path)])
+        self.y = pd.Series(sorted([os.path.join(path_to_notebooks, path_to_data, f"{mode}_labels/", label) 
+                        for label in os.listdir(self.y_path)]))
 
         self.batch_size = batch_size
         self.mode = mode
@@ -206,6 +208,11 @@ class classic_generator(Sequence):
 
         # Initial shuffling for the data
         np.random.shuffle(self.indices)
+
+        # Sanity check for indices order
+        _x_list = [file_num.rsplit('/', 1)[-1].rsplit('.')[0] for file_num in self.x]
+        _y_list = [file_num.rsplit('/', 1)[-1].rsplit('.')[0] for file_num in self.y]
+        assert _x_list == _y_list, "The index order of feature and labels are different!"
 
 
     def __len__(self):
@@ -235,7 +242,8 @@ class classic_generator(Sequence):
         batch_y = self.y[inds]
 
         # Generate spectrogram array
-        batch_x_spec = [spec_scaler(classic_train_generator(x)) for x in batch_x]
+        batch_x_spec = [spec_scaler(classic_train_generator(x, preprocess = self.preprocess)) 
+                        for x in batch_x]
 
         # Getting the number of time slices for each generated spectrogram in a list
         batch_time = [x.shape[1] for x in batch_x_spec]
@@ -247,9 +255,14 @@ class classic_generator(Sequence):
         rand_slice = [np.random.randint(0, y.shape[1] - self.trunc_length , 1)[0] for y in batch_x_spec]
         
         # Performing final truncation and dimension modification for spectrogram arrays
-        batch_x_spec = [np.expand_dims(x[:, time_slice:time_slice + self.trunc_length].T, -1) if self.expand_dim
-                        else x[:, time_slice:time_slice + self.trunc_length].T
-                                                        for x, time_slice in zip(batch_x_spec, rand_slice)]
+        if self.trunc_length:
+            batch_x_spec = [np.expand_dims(x[:, time_slice:time_slice + self.trunc_length].T, -1) if self.expand_dim
+                            else x[:, time_slice:time_slice + self.trunc_length].T
+                                                            for x, time_slice in zip(batch_x_spec, rand_slice)]
+        else:
+            batch_x_spec = [np.expand_dims(x.T, -1) if self.expand_dim
+                            else x.T for x in batch_x_spec]
+
 
         # The output correspond to the spectrograms generated, and a dictionary with 
         # instruments key. Each values in the instrument is the array of labels arrays
