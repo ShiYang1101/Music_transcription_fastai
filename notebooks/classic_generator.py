@@ -63,7 +63,7 @@ def classic_train_generator(path, **kwargs):
     Optional:
     **kwargs: Parameters to be passed in the spectrogram class initialization.
     '''
-    spec = spectrogram(path, n_mels = 128, hop_length = 4000, trunc_off = True, **kwargs)
+    spec = spectrogram(path, n_mels = 128, hop_length = 3500, n_fft = 4096,  trunc_off = True, **kwargs)
     return spec.spec
 
 def truncate_spec(arr, max_len):
@@ -162,6 +162,7 @@ def _instrument_label_generator(df_path, ins, time_len, mode, sr = 44100):
         _inner_arr[_note_list.index(_rows[1]['note']), 
                         int(_rows[1]['start_time']/num_dur_sr * time_len) : \
                                         int(_rows[1]['end_time']/num_dur_sr * time_len)] = 1
+    assert _inner_arr.shape[1] == time_len,f"The shape of output is inconsistent with the spectrogram!\n The output shape is {_inner_arr.shape}.\nAnd the desired time length should be {time_len}."
     return _inner_arr
 
 
@@ -173,7 +174,7 @@ class classic_generator(Sequence):
     for training and evaluating purpose of MusicNet dataset. 
     '''
     
-    def __init__(self, mode = 'train', batch_size = 32):
+    def __init__(self, mode = 'train', batch_size = 32, trunc_length = 200, expand_dim = True):
         '''
         Initialization for classic_generator class. The instance of this class
         act as a dataset generator for tensorflow keras models. 
@@ -182,7 +183,8 @@ class classic_generator(Sequence):
         mode: str, 'train' or 'test', used to determine the path to audio and label files
         batch_size: int, defaulted to 32, number of sample to generate in a batch
         '''
-
+        self.expand_dim = expand_dim
+        self.trunc_length = trunc_length
         # Getting the absolute path to the audio files
         self.x_path = os.path.join(path_to_notebooks, path_to_data, f"{mode}_data/")
         # Getting the absolute path to the label files
@@ -240,18 +242,23 @@ class classic_generator(Sequence):
 
         # Getting the maximum time slices in the batch for padding purpose
         max_batch_time = max([x.shape[1] for x in batch_x_spec])
-
+        min_batch_time = min([x.shape[1] for x in batch_x_spec])
+        
+        rand_slice = [np.random.randint(0, y.shape[1] - self.trunc_length , 1)[0] for y in batch_x_spec]
+        
         # Performing final truncation and dimension modification for spectrogram arrays
-        batch_x_spec = [np.expand_dims(truncate_spec(x, max_batch_time).T, -1) 
-                                                        for x in batch_x_spec]
+        batch_x_spec = [np.expand_dims(x[:, time_slice:time_slice + self.trunc_length].T, -1) if self.expand_dim
+                        else x[:, time_slice:time_slice + self.trunc_length].T
+                                                        for x, time_slice in zip(batch_x_spec, rand_slice)]
 
         # The output correspond to the spectrograms generated, and a dictionary with 
         # instruments key. Each values in the instrument is the array of labels arrays
         # with the, corresponding to the batch size
         return np.array(batch_x_spec), \
-                            {f"instrument_{ins}": np.array([truncate_spec(_instrument_label_generator(label, ins, time, 
-                                                mode= self.mode), max_batch_time).T for label, time 
-                                                        in zip(batch_y, batch_time)])
+                            {f"instrument_{ins}": np.array([_instrument_label_generator(label, ins, time, 
+                                                mode= self.mode)[:, time_slice:time_slice+ self.trunc_length].T 
+                                                            for label, time, time_slice
+                                                        in zip(batch_y, batch_time, rand_slice)])
                                                             for ins in _instrument_list} 
 
     def on_epoch_end(self):
