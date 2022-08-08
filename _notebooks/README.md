@@ -1,14 +1,28 @@
-# Auto-convert Jupyter Notebooks To Posts
+Data location: AWS S3 bucket
+s3://shiyanglee-bstn-bucket
 
-[`fastpages`](https://github.com/fastai/fastpages) will automatically convert [Jupyter](https://jupyter.org/) Notebooks saved into this directory as blog posts!
+Notebooks order:
+1. EDA
+1. music_transcription_class
+1. music_transcription_2conv
+1. music_transcription_RNN
+1. classic_transcription
 
-You must save your notebook with the naming convention `YYYY-MM-DD-*.ipynb`.  Examples of valid filenames are:
+Notebook description:
 
-```shell
-2020-01-28-My-First-Post.ipynb
-2012-09-12-how-to-write-a-blog.ipynb
-```
+|Notebook|Description|
+|---|---|
+|EDA|Preliminary cleaning/EDA for the 2 datasets: OrchideaSOL and MusicNet|
+|music_trancription_class|Contains demonstration of preprocessing for spectrogram class (defined in spectrogram_class.py) and baseline CNN model for OrchideaSOL instrument classification|
+|music_transcription_2conv| Deeper CNN model with 2 convolutional layer for OrchideaSOL|
+|music_transcription_RNN| Utilized RNN LSTM model for OrchideaSOL instrument and pitch classification|
+|classic_transcription| Sequential RNN LSTM model music transcription for MusicNet dataset|
 
-If you fail to name your file correctly, `fastpages` will automatically attempt to fix the problem by prepending the last modified date of your notebook. However, it is recommended that you name your files properly yourself for more transparency.
+py files description:
+|Py file|Description|
+|---|---|
+|spectrogram_class|Custom class for sprectrogram generation and data augmentation|
+|spec_generator_sequence|Module build on tensorflow keras Sequential class for data generation of OrchideaSOL data, in the form of spectrogram and instrument label|
+|spec_generator_sequence_multilabel|Generator for tensorflow model, with label of instrument and notes|
+|classic_generator|Generator for MusicNet dataset, includes spectrogram generation, and label of timestep and notes 2d np array, for each instruments available|
 
-See [Writing Blog Posts With Jupyter](https://github.com/fastai/fastpages#writing-blog-posts-with-jupyter) for more details.
