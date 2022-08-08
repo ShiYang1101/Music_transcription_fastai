@@ -1,0 +1,17 @@
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - cudnn=8.1
+  - pandas
+  - numpy
+  - cudatoolkit=11.2
+  - python=3.8
+  - seaborn
+  - librosa
+  - matplotlib
+  - jupyter
+  - pydot
+  - httplib2
+  - pip
+  - tensorflow-gpu=2.9.0
