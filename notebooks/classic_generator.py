@@ -242,7 +242,7 @@ class classic_generator(Sequence):
         batch_y = self.y[inds]
 
         # Generate spectrogram array
-        batch_x_spec = [spec_scaler(classic_train_generator(x, preprocess = self.preprocess)) 
+        batch_x_spec = [spec_scaler(classic_train_generator(x, preprocess = self.preprocess, shift_off = True)) 
                         for x in batch_x]
 
         # Getting the number of time slices for each generated spectrogram in a list
