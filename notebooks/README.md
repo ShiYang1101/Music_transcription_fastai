@@ -1,3 +1,5 @@
+**Please refer to the report.pdf for an overview of the project!**
+
 Data location: AWS S3 bucket
 [s3://shiyanglee-bstn-bucket](https://s3.console.aws.amazon.com/s3/buckets/shiyanglee-bstn-bucket?region=eu-west-2&tab=objects)
 
