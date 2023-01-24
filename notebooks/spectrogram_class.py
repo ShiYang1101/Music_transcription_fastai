@@ -21,7 +21,7 @@ class spectrogram(object):
     '''
 
 
-    def __init__(self, input, hop_length = 3500, n_fft = 4096, n_mels = 64, 
+    def __init__(self, input, hop_length = 3500, n_fft = 4096, n_mels = 64, win_length = 2048, 
                 preprocess = True, trunc_length = 500, trunc_off = False, shift_off = False):
         '''
         Initialized spcectrogram instance, utilized Librosa modules for generating spectrogram
@@ -59,12 +59,13 @@ class spectrogram(object):
 
             self.hop = hop_length
             self.n_fft = n_fft
+            self.win_length = win_length
             if preprocess == True:
                 # Adding noise to the signal
                 self.add_noise() 
             # Generate mel spectrogram from signal
             self.generate_spec(input, hop_length = hop_length, 
-                                        n_fft = n_fft)
+                                        n_fft = n_fft, win_length = win_length)
             if preprocess == True:
                 # Applyting masking and shifting to spectrogram
                 self.mask_spec()
@@ -136,7 +137,7 @@ class spectrogram(object):
         Input: String, path to audio file.
         Output: 2 dimensions nd.array.
         '''
-        self.spec = librosa.feature.melspectrogram(self.signal, n_mels = self.n_mels, hop_length=self.hop, n_fft=self.n_fft)
+        self.spec = librosa.feature.melspectrogram(self.signal, n_mels = self.n_mels, hop_length=self.hop, n_fft=self.n_fft, win_length = self.win_length)
         if self.spec.ndim == 3:
             self.spec = np.reshape(self.spec, self.spec.shape[:2])
 
