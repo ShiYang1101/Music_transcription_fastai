@@ -51,7 +51,7 @@ _note_list = sorted(_train_label_df['note'].unique())
 
 _sr = 44100
 
-def classic_train_generator(path, **kwargs):
+def classic_train_generator(path, n_mels = 128, hop_length = 2000, n_fft = 2048, win_length = 2000, **kwargs):
     '''
     Function for generating spectrogram by a given path to the audio file, 
     the output is a mel-scaled spectrogram, with time and frequency bins, 
@@ -63,7 +63,7 @@ def classic_train_generator(path, **kwargs):
     Optional:
     **kwargs: Parameters to be passed in the spectrogram class initialization.
     '''
-    spec = spectrogram(path, n_mels = 128, hop_length = 3500, n_fft = 4096,  trunc_off = True, **kwargs)
+    spec = spectrogram(path, n_mels = n_mels, hop_length = hop_length, n_fft = n_fft, win_length = win_length, trunc_off = True, **kwargs)
     return spec.spec
 
 def truncate_spec(arr, max_len):
