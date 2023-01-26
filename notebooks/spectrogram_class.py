@@ -138,6 +138,7 @@ class spectrogram(object):
         Output: 2 dimensions nd.array.
         '''
         self.spec = librosa.feature.melspectrogram(self.signal, n_mels = self.n_mels, hop_length=self.hop, n_fft=self.n_fft, win_length = self.win_length)
+        self.spec = librosa.power_to_db(self.spec)
         if self.spec.ndim == 3:
             self.spec = np.reshape(self.spec, self.spec.shape[:2])
 
