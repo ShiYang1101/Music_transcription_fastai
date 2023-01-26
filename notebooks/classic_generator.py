@@ -175,7 +175,7 @@ class classic_generator(Sequence):
     '''
     
     def __init__(self, mode = 'train', batch_size = 32, trunc_length = 200, expand_dim = True, 
-                    preprocess = True, hop_length = 1000, win_length = 2000, nfft = 2048):
+                    preprocess = True, hop_length = 1000, win_length = 2000, n_fft = 2048):
         '''
         Initialization for classic_generator class. The instance of this class
         act as a dataset generator for tensorflow keras models. 
@@ -189,7 +189,7 @@ class classic_generator(Sequence):
         self.trunc_length = trunc_length
         self.hop_length = hop_length
         self.win_length = win_length
-        self.nfft = nfft
+        self.n_fft = n_fft
         # Getting the absolute path to the audio files
         self.x_path = os.path.join(path_to_notebooks, path_to_data, f"{mode}_data/")
         # Getting the absolute path to the label files
@@ -245,9 +245,9 @@ class classic_generator(Sequence):
         batch_y = self.y[inds]
 
         # Generate spectrogram array
-        batch_x_spec = [spec_scaler(classic_train_generator(x, preprocess = self.preprocess, shift_off = True, 
+        batch_x_spec = [classic_train_generator(x, preprocess = self.preprocess, shift_off = True, 
                                                            hop_length = self.hop_length, win_length = self.win_length, 
-                                                           nfft = self.nfft)) 
+                                                           n_fft = self.n_fft)
                         for x in batch_x]
 
         # Getting the number of time slices for each generated spectrogram in a list
